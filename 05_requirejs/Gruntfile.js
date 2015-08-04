@@ -1,5 +1,11 @@
 var path = require('path'),
   async = require('async'),
+
+  // < For RequireJS Multi-bundle (will be moved to a plugin later)
+  glob      = require('glob'), // be sure to remove from node_modules
+  requirejs = require('requirejs'), // be sure to remove from node_modules
+  crypto = require('crypto'), // be sure to remove from node_modules
+  // >
   stylesheetsDir = 'assets/stylesheets';
 
 module.exports = function(grunt) {
@@ -59,7 +65,7 @@ module.exports = function(grunt) {
     watch: {
       scripts: {
         files: 'app/**/*.js',
-        tasks: ['rendr_requirejs:build_app', 'handlebars:compile_client'],
+        tasks: [/*'rendr_requirejs:build_app',*/ 'handlebars:compile_client'],
         options: {
           interrupt: true
         }
@@ -79,7 +85,7 @@ module.exports = function(grunt) {
         }
       }
     },
-
+/*
     rendr_requirejs: {
       build_common: {
         options: {
@@ -206,10 +212,98 @@ module.exports = function(grunt) {
           cjsTranslate: true,
         }
       }
+    },
+*/
 
+    multibundle_requirejs: {
+      options:
+      {
+        // general config
+        '_config':
+        {
+          // 4 is silent in r.js world
+          logLevel: process.env.quiet ? 4 : 1,
+          destination: 'public/js',
+          sharedBundle: 'common',
+          hashFiles: true, // TODO: custom function?
+          handleMapping: function(component, filename, includedModules)
+          {
+            console.log('handleMapping', component, filename, includedModules);
+          },
+          // pass options to r.js
+          baseUrl: '.',
+          optimize: 'none',
+          // optimize: 'uglify',
+          paths:
+          {
+            'rendr': 'node_modules/rendr'
+          },
+          preserveLicenseComments: false
+        },
+
+        // Creates `<destination>/common.<hash>.js` file that includes all the modules specified in the bundle,
+        // shared modules between all the pages.
+        // And minifies them along the way. `<hash>` is md5 hash for generated file.
+        // Plus it updates `config/<configFile>.json`
+        // with generated filename, modifying `appData.static.js.common` node.
+        'common':
+        [
+          // node modules
+          {'requirejs'               : 'node_modules/requirejs/require.js'},
+
+          // multiple entry points module
+          {'rendr/shared'            : 'node_modules/rendr/shared/app.js'},
+          {'rendr/client'            : 'node_modules/rendr/client/router.js'},
+
+          // modules needed to be shimmed
+          {'async'                   : {src: 'node_modules/async/lib/async.js', exports: 'async'}},
+          // module with implicit dependencies
+          {'backbone'                 : {src: 'node_modules/backbone/backbone.js', deps: ['jquery', 'underscore'], exports: 'Backbone'}},
+          {'handlebars'               : {src: 'node_modules/handlebars/dist/handlebars.runtime.js', exports: 'Handlebars'}},
+          {'underscore'               : {src: 'node_modules/underscore/underscore.js', exports: '_'}},
+
+          // checked in assets
+//          {'hammer'                  : 'assets/js/vendor/hammer'},
+//          {'nouislider'              : 'assets/js/vendor/jquery.nouislider.min'},
+
+          // assets needed to be shimmed
+          {'jquery'                  : {src: 'assets/vendor/jquery-1.9.1.min', exports: 'jQuery'}},
+
+          // execute plugin to add methods to jQuery
+
+          // config/trigger
+          {'main'                    : 'assets/js/public/main'},
+
+          // base app files
+          'app/*.js',
+
+          // lib
+          'app/lib/**/*.js',
+
+          'app/views/home/**/*.js',
+
+        ],
+
+        // Creates separate bundle for user page components – `<destination>/user.<hash>.js`
+        'user':
+        [
+          'app/models/user.js',
+          'app/collections/users.js',
+          'app/views/users/**/*.js',
+          'app/controllers/users_controller.js',
+        ],
+
+        // Creates separate bundle for user page components – `<destination>/maps.<hash>.js`
+        'repos':
+        [
+          'app/models/repo.js',
+          'app/collections/repos.js',
+          'app/views/repos/**/*.js',
+          'app/controllers/repos_controller.js',
+        ]
+      }      
     }
   });
-
 
   grunt.loadNpmTasks('grunt-contrib-stylus');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -218,12 +312,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-rendr-requirejs');
 
 
-  grunt.registerTask('build_world',
-  [ 'rendr_requirejs:build_common',
-    'rendr_requirejs:build_rendr',
-    'rendr_requirejs:build_rendr_handlebars',
-    'rendr_requirejs:build_app'
-  ]);
+  // grunt.registerTask('build_world',
+  // [ 'rendr_requirejs:build_common',
+  //   'rendr_requirejs:build_rendr',
+  //   'rendr_requirejs:build_rendr_handlebars',
+  //   'rendr_requirejs:build_app'
+  // ]);
 
   grunt.registerTask('runNode', function () {
     grunt.util.spawn({
@@ -240,10 +334,247 @@ module.exports = function(grunt) {
   grunt.registerTask('compile', ['handlebars', 'stylus']);
 
   // Run the server and watch for file changes
-  grunt.registerTask('server', ['build_world', 'compile', 'runNode', 'watch']);
+  grunt.registerTask('server', [/*'build_world', */'compile', 'runNode', 'watch']);
 
   // Default task(s).
   grunt.registerTask('default', ['compile']);
+
+  grunt.registerTask('multibundle_requirejs', 'Build a multi-bundle RequireJS project.', function()
+  {
+    var buildConfig
+      , includedInShared
+      , modulesOfShared
+        // grunt async callback
+      , done = this.async()
+        // grunt task options
+      , options = this.options()
+        // common task options
+      , commonOptions =
+        {
+          logLevel: options['_config'].logLevel || 1
+        }
+      ;
+
+    // snitch build config from the options list
+    buildConfig = options['_config'];
+
+    // process buildConfig.sharedBundle component before anything else
+    processComponent(buildConfig.sharedBundle, function()
+    {
+      // loop though the rest of components
+      async.eachSeries(Object.keys(options), processComponent, function(err)
+      {
+        // silent is number 4 in r.js world
+        if (commonOptions.logLevel < 4)
+        {
+          grunt.log.writeln('\n--\nAll javascript bundles are ready, ' + (err ? err : 'with no errors.'));
+        }
+        done();
+      });
+    });
+
+    //
+    function processComponent(component, cb)
+    {
+      var componentOptions // per-component options
+        , outFile // original bundle file name
+        ;
+
+      // skip reserved words components or deleted ones
+      if (component == '_config' || !options[component])
+      {
+        return cb();
+      }
+
+      // collect data for r.js job
+      componentOptions =
+      {
+        cjsTranslate: true,
+        create: true,
+        removeCombined: true,
+        keepBuildDir: false,
+        preserveLicenseComments: buildConfig.preserveLicenseComments || false,
+
+        baseUrl: buildConfig.baseUrl,
+        name: component,
+        optimize: buildConfig.optimize || 'none',
+        out: (buildConfig.destination || buildConfig.baseUrl) + '/' + component + '.js',
+        packages: [],
+        paths: buildConfig.paths || {},
+        shim: {},
+        include: [],
+        insertRequire: []
+      };
+
+      // populate with files
+      options[component].forEach(function(item)
+      {
+        var name, src;
+
+        // we can have either a string or an object
+        if (typeof item == 'string')
+        {
+          // add item to the config
+          // if item has glob patterns – unfold it
+          if (glob.hasMagic(item))
+          {
+            // unfold path and add to include list
+            // using default `process.cwd()` as base path
+            componentOptions.include = componentOptions.include.concat(stripExtensions(glob.sync(item)));
+          }
+          else
+          {
+            componentOptions.include.push(item);
+          }
+        }
+        else // if its an object expect it to be single key
+        {
+          name = Object.keys(item)[0];
+
+          // add item to the config
+          componentOptions.include.push(name);
+
+          // item could be a path to the file
+          // or options object with extra parameters
+          if (typeof item[name] == 'string')
+          {
+            if (item[name].indexOf('node_modules/') > -1)
+            {
+              componentOptions.packages.push(
+              {
+                name: name,
+                location: path.dirname(item[name]),
+                main: path.basename(item[name])
+              });
+            }
+            else
+            {
+              componentOptions.paths[name] = stripExtensions(item[name]);
+            }
+          }
+          else
+          {
+            // add module to the config
+            // set it up as a package for node_modules
+            if (item[name].src.indexOf('node_modules/') > -1)
+            {
+              componentOptions.packages.push(
+              {
+                name: name,
+                location: path.dirname(item[name].src),
+                main: path.basename(item[name].src)
+              });
+            }
+            else
+            {
+              componentOptions.paths[name] = stripExtensions(item[name].src);
+            }
+
+            // process extra params
+            if (item[name].exports)
+            {
+              componentOptions.shim[name] = {exports: item[name].exports};
+              // throw deps into mix
+              if (item[name].deps)
+              {
+                componentOptions.shim[name].deps = item[name].deps;
+              }
+            }
+
+            // check for forced require
+            if (item[name].insertRequire)
+            {
+              componentOptions.insertRequire.push(name);
+            }
+          }
+        }
+      });
+
+      // assembled list of modules to include
+      // store reference to the buildConfig.sharedBundle modules
+      if (component == buildConfig.sharedBundle)
+      {
+        includedInShared = componentOptions.include;
+        modulesOfShared = componentOptions.packages;
+      }
+      // add it as exclude list to other components
+      else
+      {
+        componentOptions.exclude = includedInShared;
+        componentOptions.packages = modulesOfShared;
+      }
+
+      // add hashing if needed
+      if (buildConfig.hashFiles)
+      {
+        // override out options with custom function
+        // but keep filename for later
+        outFile = componentOptions.out;
+
+        componentOptions.out = function hashOutput(output)
+        {
+          var hash
+            , filename
+            , moduleMapping = {}
+            , md5sum = crypto.createHash('md5')
+            ;
+
+          md5sum.update(output);
+          hash = md5sum.digest('hex');
+
+          // update filename
+          outFile = outFile.replace(/\.js$/, '.'+hash+'.js');
+
+          grunt.file.write(outFile, output);
+          grunt.log.writeln('\n- Created file "' + outFile + '" with:');
+
+          filename = path.basename(outFile);
+
+          // update config
+          buildConfig.handleMapping(component, filename, componentOptions.include);
+        }
+      }
+
+      // add grunt specific options
+      componentOptions.logLevel = commonOptions.logLevel;
+
+      // async task
+      componentOptions.done = function(response)
+      {
+        // silent is number 4 in r.js qorld
+        if (commonOptions.logLevel < 4)
+        {
+          grunt.log.writeln('Finished "' + component + '" bundle.\n');
+        }
+        cb();
+      }
+
+      // remove processed options from the original list
+      // to prevent duplicates
+      delete options[component];
+
+      // run requirejs builder
+      grunt.verbose.writeflags(componentOptions, 'Options');
+      requirejs.optimize(componentOptions, componentOptions.done);
+    }
+
+  });
+
+// Strip extensions from the list of filenames
+function stripExtensions(paths)
+{
+  // support string as single element list
+  if (typeof paths == 'string')
+  {
+    return paths.replace(/\.js$/, '');
+  }
+  // proceed with array
+  else
+  {
+    return paths.map(function(p) { return p.replace(/\.js$/, ''); });
+  }
+}
+
 
   // wrapper for grunt.util.spawn
   // to trim down boilerplate
