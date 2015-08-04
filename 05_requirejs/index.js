@@ -1,3 +1,5 @@
+require('global-define')({basePath: ''});
+
 var express     = require('express')
   , rendr       = require('rendr')
   , app         = express()

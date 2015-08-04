@@ -1,10 +1,7 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var BaseClientRouter = require('rendr/client/router');
+define([
+  'rendr/client/router'
+], function(BaseClientRouter)
+{
 
   var Router = function Router(options) {
     BaseClientRouter.call(this, options);

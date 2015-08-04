@@ -19,7 +19,8 @@
     "rendr": "^1.0.3",
     "rendr-handlebars": "^1.0.0",
     "serve-static": "^1.9.1",
-    "underscore": "^1.8.2"
+    "underscore": "^1.8.2",
+    "global-define": "^1.1.4"
   },
   "devDependencies": {
     "requirejs": "~2.1.15",

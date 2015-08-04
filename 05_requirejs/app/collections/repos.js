@@ -1,12 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var Repo = require('../models/repo')
-    , Base = require('./base');
-
+define([
+  'app/models/repo',
+  'app/collections/base'
+], function(Repo, Base)
+{
   var exports = Base.extend({
     model: Repo,
     url: function() {

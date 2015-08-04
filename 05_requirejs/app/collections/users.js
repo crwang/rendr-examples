@@ -1,12 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var User = require('../models/user')
-    , Base = require('./base');
-
+define([
+  'app/models/user',
+  'app/collections/base'
+], function(User, Base)
+{
   var exports = Base.extend({
     model: User,
     url: '/users'
@@ -14,5 +10,4 @@ define(function(require) {
   exports.id = 'Users';
 
   return exports;
-
 });
