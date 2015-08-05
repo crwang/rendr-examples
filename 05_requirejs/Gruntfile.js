@@ -1,12 +1,18 @@
-var path = require('path'),
+var fs = require('fs'),
+  path = require('path'),
   async = require('async'),
 
   // < For RequireJS Multi-bundle (will be moved to a plugin later)
   glob      = require('glob'), // be sure to remove from node_modules
   requirejs = require('requirejs'), // be sure to remove from node_modules
   crypto = require('crypto'), // be sure to remove from node_modules
+  _ = require('underscore'),
   // >
-  stylesheetsDir = 'assets/stylesheets';
+
+  stylesheetsDir = 'assets/stylesheets',
+  requirejsBundleMapping = 'config/mapping.json';
+
+var config = require('config');
 
 module.exports = function(grunt) {
 
@@ -226,6 +232,8 @@ module.exports = function(grunt) {
           destination: 'public/js',
           sharedBundle: 'common',
           hashFiles: true, // TODO: custom function?
+          mappingFile: requirejsBundleMapping,
+          removePreviouslyBuiltBundles: true,
           handleMapping: function(component, filename, includedModules)
           {
             console.log('handleMapping', component, filename, includedModules);
@@ -263,8 +271,6 @@ module.exports = function(grunt) {
           {'underscore'               : {src: 'node_modules/underscore/underscore.js', exports: '_'}},
 
           // checked in assets
-//          {'hammer'                  : 'assets/js/vendor/hammer'},
-//          {'nouislider'              : 'assets/js/vendor/jquery.nouislider.min'},
 
           // assets needed to be shimmed
           {'jquery'                  : {src: 'assets/vendor/jquery-1.9.1.min', exports: 'jQuery'}},
@@ -341,33 +347,74 @@ module.exports = function(grunt) {
 
   grunt.registerTask('multibundle_requirejs', 'Build a multi-bundle RequireJS project.', function()
   {
-    var buildConfig
-      , includedInShared
-      , modulesOfShared
-        // grunt async callback
-      , done = this.async()
-        // grunt task options
-      , options = this.options()
+    var buildConfig,
+      includedInShared,
+      modulesOfShared,
+      // grunt async callback
+      done = this.async(),
+      // grunt task options
+      options = this.options(),
         // common task options
-      , commonOptions =
+      commonOptions =
         {
-          logLevel: options['_config'].logLevel || 1
-        }
-      ;
+          logLevel: options['_config'].logLevel || 1,
+          removePreviouslyBuiltBundles: options._config.removePreviouslyBuiltBundles
+        };
 
     // snitch build config from the options list
     buildConfig = options['_config'];
 
+    // if there's a mapping file
+    console.log('Removing previously built bundles');
+
+    if (buildConfig.mappingFile && commonOptions.removePreviouslyBuiltBundles) {
+
+      // Delete the existing assets here, maybe set a config
+      if (fs.existsSync(buildConfig.mappingFile)) {
+        try {
+          var manifest = fs.readFileSync(buildConfig.mappingFile);
+          var bundles = JSON.parse(manifest),
+            bundlePath;
+
+          bundles.forEach(function(bundle) {
+            // Only one key per object
+            bundlePath = path.join(buildConfig.destination, Object.keys(bundle)[0]);
+            if (fs.existsSync(bundlePath)) {
+              console.log('Removing: ' + bundlePath);
+              fs.unlinkSync(bundlePath);
+            }
+          });
+        } catch (err) {
+
+        }
+
+      }      
+    }
+
     // process buildConfig.sharedBundle component before anything else
-    processComponent(buildConfig.sharedBundle, function()
-    {
+    processComponent(buildConfig.sharedBundle, function() {
       // loop though the rest of components
-      async.eachSeries(Object.keys(options), processComponent, function(err)
-      {
+
+      // Remove the config option before processing the components
+      if (options._config) {
+        delete options._config;
+      }
+
+      async.mapSeries(Object.keys(options), processComponent, function(err, data) {
         // silent is number 4 in r.js world
         if (commonOptions.logLevel < 4)
         {
           grunt.log.writeln('\n--\nAll javascript bundles are ready, ' + (err ? err : 'with no errors.'));
+        }
+
+        // Here we can write out our file with properties.
+        data = data.reduce(function(previousValue,currentValue) {
+          return _.extend(previousValue, currentValue);
+          }, {});
+
+        // Convert the array to an object
+        if (buildConfig.mappingFile) {
+          fs.writeFileSync(buildConfig.mappingFile, JSON.stringify(data));
         }
         done();
       });
@@ -376,9 +423,10 @@ module.exports = function(grunt) {
     //
     function processComponent(component, cb)
     {
-      var componentOptions // per-component options
-        , outFile // original bundle file name
-        ;
+      var componentOptions, // per-component options
+        outFile, // original bundle file name
+        bundleMappingObject = {},
+        bundleMapping = []; // the bundle mapping
 
       // skip reserved words components or deleted ones
       if (component == '_config' || !options[component])
@@ -420,11 +468,14 @@ module.exports = function(grunt) {
           {
             // unfold path and add to include list
             // using default `process.cwd()` as base path
+
             componentOptions.include = componentOptions.include.concat(stripExtensions(glob.sync(item)));
           }
           else
           {
-            componentOptions.include.push(item);
+            // CRW: should there be a strip here as well?
+//            componentOptions.include.push(item);
+            componentOptions.include.push(stripExtensions(item));
           }
         }
         else // if its an object expect it to be single key
@@ -513,11 +564,10 @@ module.exports = function(grunt) {
 
         componentOptions.out = function hashOutput(output)
         {
-          var hash
-            , filename
-            , moduleMapping = {}
-            , md5sum = crypto.createHash('md5')
-            ;
+          var hash, 
+            filename, 
+            moduleMapping = {}, 
+            md5sum = crypto.createHash('md5');
 
           md5sum.update(output);
           hash = md5sum.digest('hex');
@@ -532,7 +582,8 @@ module.exports = function(grunt) {
 
           // update config
           buildConfig.handleMapping(component, filename, componentOptions.include);
-        }
+          bundleMappingObject[filename] = componentOptions.include;
+        };
       }
 
       // add grunt specific options
@@ -546,8 +597,9 @@ module.exports = function(grunt) {
         {
           grunt.log.writeln('Finished "' + component + '" bundle.\n');
         }
-        cb();
-      }
+
+        cb(null, bundleMappingObject);
+      };
 
       // remove processed options from the original list
       // to prevent duplicates

@@ -1,0 +1,7 @@
+# Default config
+
+server:
+  port: 3030
+
+files:
+  base_url: ""

@@ -1,11 +1,15 @@
 require('global-define')({basePath: ''});
 
-var express     = require('express')
-  , rendr       = require('rendr')
-  , app         = express()
-  , bodyParser  = require('body-parser')
-  , compression = require('compression')
-  , serveStatic = require('serve-static');
+var express     = require('express'),
+  rendr       = require('rendr'),
+  _           = require('underscore'),
+  config      = require('config'),
+  app         = express(),
+  bodyParser  = require('body-parser'),
+  compression = require('compression'),
+  serveStatic = require('serve-static'),
+  fs          = require('fs'),
+  requirejsBundleMapping = 'config/mapping.json';
 
 /**
  * In this simple example, the DataAdapter config, which specifies host, port, etc. of the API
@@ -35,6 +39,26 @@ server.configure(function (expressApp) {
   expressApp.use(compression());
   expressApp.use(serveStatic(__dirname + '/public'));
   expressApp.use(bodyParser.json());
+
+  if (fs.existsSync(requirejsBundleMapping)) {
+    // Set the requireJs mapping if it's found
+    expressApp.use(function(req, res, next) {
+        var app = req.rendrApp;
+        var manifest = fs.readFileSync(requirejsBundleMapping);
+        var bundles = JSON.parse(manifest);
+        app.set('requirejsBundles', bundles);
+
+        next();
+    });
+  }
+
+  // Set the config into the app
+  expressApp.use(function(req, res, next) {
+      var app = req.rendrApp;
+      app.set('config', _.pick(config, 'files'));
+      next();
+  });
+
 });
 
 /**
@@ -46,6 +70,11 @@ server.configure(function (expressApp) {
   *     app.use('/my_cool_app', server);
   */
 app.use(server.expressApp);
+
+
+// if (app.settings.env == 'development') {
+//   app.use('/js/app', express.static(__dirname + '/app'));
+// }
 
 /**
  * Start the Express server.
