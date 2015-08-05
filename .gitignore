@@ -37,3 +37,4 @@ node_modules
 */public/testBundle.js
 */public/styles.css
 */public/js/*
+!*/public/js/requirejsMain.js
