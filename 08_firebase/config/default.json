@@ -1,0 +1,24 @@
+{
+    "api": {
+        "default": {
+            "host": "api.github.com",
+            "protocol": "https"
+        },
+        "travis-ci": {
+            "host": "api.travis-ci.org",
+            "protocol": "https"
+        },
+        "firebase": {
+            "host": "rendr.firebaseio.com",
+            "protocol": "https"
+        }
+    },
+
+    // Data for the app that is on both client and server
+    "appData": {
+        "firebase": {
+            "host": "rendr.firebaseio.com",
+            "protocol": "https"
+        }
+    }
+}

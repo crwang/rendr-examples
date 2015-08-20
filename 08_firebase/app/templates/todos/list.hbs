@@ -1,0 +1,5 @@
+{{#each _collection.models}}
+    {{view "todos/item" model=this}}
+{{else}}
+    No Todos Found
+{{/each}}

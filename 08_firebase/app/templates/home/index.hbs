@@ -1,0 +1,29 @@
+<h1>Todos</h1>
+
+<p>
+    This is an example of a TODO application that shows how to extend
+    Rendr to use firebase.  This means you should be able to open the app in multiple windows and it should stay in sync.
+</p>
+<p>
+   This example heavily borrows from: <a href="https://github.com/tastejs/todomvc">https://github.com/tastejs/todomvc</a>
+</p>
+
+<h3>Known Limitations</h3>
+<p>
+    This example shows how to pull in firebase data from the server side and uses the firebase REST endpoints for CRUD.  However, for changes, we use the javascript API to listen for events and don't subscribe to them on the server.
+</p>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                Todos
+            </div>
+            <div class="panel-body">
+                {{view "todos/form"}}
+                {{view "todos/list" collection=_collection}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<p>{{copyright "2015"}}</p>

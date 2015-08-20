@@ -1,0 +1,13 @@
+.todos_list_view li.completed label {
+  color: #d9d9d9;
+  text-decoration: line-through;
+}
+.todos_list_view li .input-edit {
+  display: none;
+}
+.todos_list_view li.editing .view {
+  display: none;
+}
+.todos_list_view li.editing .input-edit {
+  display: block;
+}

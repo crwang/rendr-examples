@@ -1,0 +1,13 @@
+<div class="view clearfix">
+    <div class="pull-left">        
+        <label>
+            <input class="toggle" type="checkbox" {{#completed}}checked{{/completed}}>
+            {{title}}
+        </label>
+    </div>
+    <div class="pull-right">
+        <a class="edit" href="#"><i class="fa fa-pencil"></i></a> 
+        <a class="destroy" href="#"><i class="fa fa-times"></i></a>
+    </div>
+</div>
+<input class="input-edit form-control" value="{{title}}">
