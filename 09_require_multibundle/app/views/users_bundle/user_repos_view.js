@@ -1,11 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var BaseView = require('./base');
-
+define([
+  'app/views/base'
+], function(BaseView)
+{
+  
   var exports = BaseView.extend({
     className: 'user_repos_view'
   });

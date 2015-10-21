@@ -1,12 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var Repo = require('../models/repo')
-    , Base = require('./base');
-
+define([
+  'app/models/repos_bundle/repo',
+  'app/collections/base'
+], function(Repo, Base)
+{
   var exports = Base.extend({
     model: Repo,
     url: function() {
@@ -17,7 +13,7 @@ define(function(require) {
       }
     }
   });
-  exports.id = 'Repos';
+  exports.id = 'repos_bundle/repos';
 
   return exports;
 

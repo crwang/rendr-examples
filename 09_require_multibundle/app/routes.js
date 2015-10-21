@@ -1,16 +1,13 @@
-if (typeof define !== 'function') {
-    var define = require('amdefine')(module);
-}
 
 define(function(require)
 {
 
   return function(match) {
     match('',                   'home#index');
-    match('repos',              'repos#index');
-    match('repos/:owner/:name', 'repos#show');
-    match('users'       ,       'users#index');
-    match('users/:login',       'users#show');
+    match('repos',              'repos_bundle/repos#index');
+    match('repos/:owner/:name', 'repos_bundle/repos#show');
+    match('users'       ,       'users_bundle/users#index');
+    match('users/:login',       'users_bundle/users#show');
   };
 
 });

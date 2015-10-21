@@ -2,11 +2,11 @@ define([
   'app/views/base'
 ], function(BaseView)
 {
-  
+
   var exports = BaseView.extend({
-    className: 'users_index_view'
+    className: 'repos_index_view'
   });
-  exports.id = 'users_bundle/users/index';
+  exports.id = 'repos_bundle/repos/index';
 
   return exports;
 

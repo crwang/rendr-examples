@@ -1,10 +1,7 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var BaseView = require('../base');
+define([
+  'app/views/base'
+], function(BaseView)
+{
 
   var exports = BaseView.extend({
     className: 'repos_show_view',
@@ -15,7 +12,7 @@ define(function(require) {
       return data;
     }
   });
-  exports.id = 'repos/show';
+  exports.id = 'repos_bundle/repos/show';
 
   return exports;
 

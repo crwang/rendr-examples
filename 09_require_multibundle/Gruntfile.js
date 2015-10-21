@@ -1,6 +1,8 @@
 var path = require('path'),
     async = require('async'),
-    stylesheetsDir = 'assets/stylesheets';
+    stylesheetsDir = 'assets/stylesheets',
+    usersBundleTemplatePath = 'app/templates/users_bundle/**/*.hbs',
+    reposBundleTemplatePath = 'app/templates/repos_bundle/**/*.hbs';
 
 // ,
 // requirejsBundleMapping = 'config/mapping.json';  
@@ -37,6 +39,7 @@ module.exports = function(grunt) {
                     // pass options to r.js
                     baseUrl: '.',
                     optimize: 'uglify',
+                    // optimize: 'none',
                     sharedPaths: {
                         // test location namespacing
                         'app': 'app',
@@ -123,7 +126,9 @@ module.exports = function(grunt) {
 
                     // base app files
                     'app/*.js',
+                    // 'public/js/app/templates/compiledTemplates.js',
                     'app/templates/*.js',
+                    // '!app/templates/compiledTemplates.js',
 
                     // lib
                     'app/lib/**/*.js',
@@ -143,103 +148,23 @@ module.exports = function(grunt) {
                 ],
                 // Creates separate bundle for user page components – `<destination>/user.<hash>.js`
                 user: [
-                    'app/models/user.js',
-                    'app/collections/users.js',
-                    'app/views/users/**/*.js',
-                    'app/controllers/users_controller.js',
+                    'app/models/users_bundle/**/*.js',
+                    'app/collections/users_bundle/**/*.js',
+                    'app/views/users_bundle/**/*.js',
+                    'app/controllers/users_bundle/**/*.js',
+                    'public/js/app/templates/users_bundle/compiledTemplates.js'
                 ],
 
                 // Creates separate bundle for user page components – `<destination>/maps.<hash>.js`
                 repos: [
-                    'app/models/repo.js',
-                    'app/collections/repos.js',
-                    'app/views/repos/**/*.js',
-                    'app/controllers/repos_controller.js',
+                    'app/models/repos_bundle/**/*.js',
+                    'app/collections/repos_bundle/**/*.js',
+                    'app/views/repos_bundle/**/*.js',
+                    'app/controllers/repos_bundle/**/*.js',
+                    'public/js/app/templates/repos_bundle/compiledTemplates.js'
                 ]
             }
         },
-
-
-        // 'multibundle-requirejs': {
-        //   options: {
-        //     _config: {
-        //       // task "global" options
-
-        //       // logLevel: process.env.quiet ? 4 : 1,
-        //       logLevel: 1,
-        //       destination: 'public/js',
-        //       sharedBundle: 'common',
-        //       hashFiles: true, // TODO: custom function?
-        //       // mappingFile: requirejsBundleMapping,
-        //       removePreviouslyBuiltBundles: true,
-        //       handleMapping: function(component, filename, includedModules)
-        //       {
-        //         console.log('handleMapping', component, filename, includedModules);
-        //       },
-
-        //       // pass options to r.js
-        //       baseUrl: '.',
-        //       // optimize: 'none',
-        //       optimize: 'uglify',
-        //       paths:
-        //       {
-        //         'rendr': 'node_modules/rendr'
-        //       },
-        //       preserveLicenseComments: false        
-        //     },
-        //     common: [
-        //         // node modules
-        //         {'requirejs'               : 'node_modules/requirejs/require.js'},
-
-        //         // multiple entry points module
-        //         {'rendr/shared'            : 'node_modules/rendr/shared/app.js'},
-        //         {'rendr/client'            : 'node_modules/rendr/client/router.js'},
-
-        //         // modules needed to be shimmed
-        //         {'async'                   : {src: 'node_modules/async/lib/async.js', exports: 'async'}},
-        //         // module with implicit dependencies
-        //         {'backbone'                 : {src: 'node_modules/backbone/backbone.js', deps: ['jquery', 'underscore'], exports: 'Backbone'}},
-        //         {'handlebars'               : {src: 'node_modules/handlebars/dist/handlebars.runtime.js', exports: 'Handlebars'}},
-        //         {'underscore'               : {src: 'node_modules/underscore/underscore.js', exports: '_'}},
-
-        //         // checked in assets
-
-        //         // assets needed to be shimmed
-        //         {'jquery'                  : {src: './assets/vendor/jquery-1.9.1.min.js', exports: 'jQuery'}},
-
-        //         // execute plugin to add methods to jQuery
-
-        //         // config/trigger
-        //         // {'main'                    : 'assets/js/public/main'},
-        //         {'main'                    : 'assets/js/app'},
-
-        //         // base app files
-        //         'app/*.js',
-
-        //         // lib
-        //         'app/lib/**/*.js',
-
-        //         'app/views/home/**/*.js',
-
-        //     ],
-
-        //     // Creates separate bundle for user page components – `<destination>/user.<hash>.js`
-        //     user: [
-        //       'app/models/user.js',
-        //       'app/collections/users.js',
-        //       'app/views/users/**/*.js',
-        //       'app/controllers/users_controller.js',
-        //     ],
-
-        //     // Creates separate bundle for user page components – `<destination>/maps.<hash>.js`
-        //     repos: [
-        //       'app/models/repo.js',
-        //       'app/collections/repos.js',
-        //       'app/views/repos/**/*.js',
-        //       'app/controllers/repos_controller.js',
-        //     ]
-        //   }
-
 
         stylus: {
             compile: {
@@ -266,6 +191,7 @@ module.exports = function(grunt) {
                 dest: "app/templates/compiledTemplates.js",
                 filter: function(filepath) {
                     var filename = path.basename(filepath);
+                    console.log('filename: ' + filename);
                     // Exclude files that begin with '__' from being sent to the client,
                     // i.e. __layout.hbs.
                     return filename.slice(0, 2) !== '__';
@@ -278,13 +204,15 @@ module.exports = function(grunt) {
                         return filename.replace('app/templates/', '').replace('.hbs', '');
                     }
                 },
-                src: "app/templates/**/*.hbs",
-                dest: "public/js/app/templates/compiledTemplates.js",
-                filter: function(filepath) {
-                    var filename = path.basename(filepath);
-                    // Exclude files that begin with '__' from being sent to the client,
-                    // i.e. __layout.hbs.
-                    return filename.slice(0, 2) !== '__';
+                files: {
+                      // 'app/templates/compiledTemplatesClient.js': 
+                      'public/js/app/templates/compiledTemplates.js': 
+                        ['app/templates/**/*.hbs', 
+                            '!' + usersBundleTemplatePath,
+                            '!' + reposBundleTemplatePath,
+                            '!app/templates/__layout.hbs'],
+                      'public/js/app/templates/users_bundle/compiledTemplates.js': usersBundleTemplatePath,
+                      'public/js/app/templates/repos_bundle/compiledTemplates.js': reposBundleTemplatePath
                 }
             }
         },
@@ -311,138 +239,7 @@ module.exports = function(grunt) {
                     interrupt: true
                 }
             }
-        },
-        /*
-    rendr_requirejs: {
-      build_common: {
-        options: {
-          optimize: 'none',
-          out: 'public/js/common.js',
-          baseUrl: 'public/js',
-          create: true,
-          name: 'common',
-          paths: {
-            jquery: '../../assets/vendor/jquery-1.9.1.min',
-          },
-          shim: {
-            async: {
-              exports: 'async'
-            },
-            jquery: {
-              exports: 'jQuery'
-            },
-            underscore: {
-              exports: '_'
-            },
-            backbone: {
-              deps: [
-                'jquery',
-                'underscore'
-              ],
-              exports: 'Backbone'
-            },
-            handlebars: {
-              exports: 'Handlebars'
-            }
-          },
-          include: [
-            'requirejs',
-            'jquery',
-            'underscore',
-            'backbone',
-            'async',
-            'handlebars'
-          ],
-          node_modules: [
-            // underscore, backbone and async may be located under rendr module or as peers to rendr.
-            // grunt-rendr-requirejs will automatically check rendr dependencies and parent folders
-            {name: 'requirejs', location: 'requirejs', main: 'require.js'},
-            {name: 'underscore', location: 'underscore', main: 'underscore.js'},
-            {name: 'backbone', location: 'backbone', main: 'backbone.js'},
-            {name: 'handlebars', location: 'handlebars/dist', main: 'handlebars.runtime.js'},
-            {name: 'async', location: 'async/lib', main: 'async.js'}
-          ]
         }
-      },
-      build_rendr:
-      {
-        options:
-        {
-          optimize: 'none',
-          dir: 'public/js',
-          baseUrl: 'assets/js',
-          cjsTranslate: true,
-          keepBuildDir: true,
-          paths:
-          {
-            'jquery': 'empty:',
-            'underscore': 'empty:',
-            'backbone': 'empty:',
-            'async': 'empty:',
-            'app/router': 'empty:',
-
-            'rendr/client': '../../node_modules/rendr/client',
-            'rendr/shared': '../../node_modules/rendr/shared',
-          },
-          modules:
-          [
-            {name: 'rendr/client/app_view', exclude: ['underscore', 'backbone', 'async', 'jquery', 'rendr/shared/base/view']},
-            {name: 'rendr/client/router', exclude: ['underscore', 'backbone', 'jquery', 'rendr/shared/base/router', 'rendr/shared/base/view', 'rendr/client/app_view']},
-
-            { name: 'rendr/shared/app', exclude: ['backbone', 'jquery', 'rendr/shared/fetcher', 'app/router', 'rendr/client/app_view', 'rendr/shared/syncer', 'rendr/shared/base/model', 'rendr/shared/base/collection', 'rendr/shared/modelUtils', 'rendr/shared/base/view'] },
-            { name: 'rendr/shared/fetcher', exclude: ['underscore', 'jquery', 'backbone', 'async', 'rendr/shared/modelUtils', 'rendr/shared/store/model_store', 'rendr/shared/store/collection_store'] },
-            { name: 'rendr/shared/modelUtils', exclude: ['rendr/shared/base/model', 'rendr/shared/base/collection'] },
-            { name: 'rendr/shared/syncer', exclude: ['underscore', 'backbone', 'jquery'] },
-            { name: 'rendr/shared/base/collection', exclude: ['underscore', 'backbone', 'jquery', 'rendr/shared/syncer', 'rendr/shared/base/model'] },
-            { name: 'rendr/shared/base/model', exclude: ['underscore', 'backbone', 'jquery', 'rendr/shared/syncer'] },
-            { name: 'rendr/shared/base/router', exclude: ['underscore', 'backbone', 'jquery'] },
-            { name: 'rendr/shared/base/view', exclude: ['underscore', 'backbone', 'jquery', 'async', 'rendr/shared/modelUtils', 'rendr/shared/base/model', 'rendr/shared/base/collection', 'rendr/shared/syncer'] },
-            { name: 'rendr/shared/store/collection_store', exclude: ['underscore', 'rendr/shared/store/memory_store', 'rendr/shared/modelUtils', 'rendr/shared/base/collection', 'rendr/shared/base/model', 'rendr/shared/syncer', 'backbone'] },
-            { name: 'rendr/shared/store/memory_store' },
-            { name: 'rendr/shared/store/model_store', exclude: ['underscore', 'rendr/shared/store/memory_store', 'rendr/shared/modelUtils', 'rendr/shared/base/collection', 'rendr/shared/base/model', 'rendr/shared/syncer', 'backbone'] }
-          ]
-        }
-      },
-
-      build_rendr_handlebars: {
-        options: {
-          optimize: 'none',
-          out: 'public/js/rendr-handlebars.js',
-          baseUrl: 'public/js',
-          cjsTranslate: true,
-          create: true,
-          name: 'rendr-handlebars',
-          include: [
-            'rendr-handlebars'
-          ],
-          paths:
-          {
-            'jquery': 'empty:',
-            'underscore': 'empty:',
-            'backbone': 'empty:',
-            'handlebars': 'empty:',
-            'async': 'empty:'
-          },
-          node_modules: [
-            {name: 'rendr-handlebars', location: 'rendr-handlebars', main: 'index.js'},
-          ]
-        }
-      },
-
-      build_app:
-      {
-        options:
-        {
-          optimize: 'none',
-          dir: 'public/js/app',
-          baseUrl: 'app',
-          cjsTranslate: true,
-        }
-      }
-
-    }
-*/
-
     });
 
 

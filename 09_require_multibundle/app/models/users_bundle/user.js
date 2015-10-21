@@ -1,15 +1,13 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-  var Base = require('../base');
-
+define([
+  'app/models/base'
+], function(Base)
+{
+    
   var exports = Base.extend({
     url: '/users/:login',
     idAttribute: 'login'
   });
-  exports.id = 'User';
+  exports.id = 'users_bundle/user';
 
   return exports;
 });

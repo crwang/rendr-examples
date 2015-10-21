@@ -1,11 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var BaseApp = require('rendr/shared/app')
-    , handlebarsHelpers = require('./lib/handlebarsHelpers');
+define([
+  'rendr/shared/app',
+  'app/lib/handlebarsHelpers'
+], function(BaseApp, handlebarsHelpers)
+{
 
   /**
    * Extend the `BaseApp` class, adding any custom methods or overrides.

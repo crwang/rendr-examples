@@ -33,7 +33,7 @@ require([
     if (!appNS.appData.requirejsBundles.hasOwnProperty(key)) continue;
 
     // TODO: Add prefix
-    bundles['js/' + key] = appNS.appData.requirejsBundles[key];
+    bundles['/js/' + key] = appNS.appData.requirejsBundles[key];
   }    
   require.config({bundles: bundles});
 

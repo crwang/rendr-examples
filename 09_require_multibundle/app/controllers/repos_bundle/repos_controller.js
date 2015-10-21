@@ -1,16 +1,11 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var _ = require('underscore');
+define(function(require)
+{
 
   return {
     index: function(params, callback) {
 
       var spec = {
-        collection: {collection: 'users_bundle/users', params: params}
+        collection: {collection: 'repos_bundle/repos', params: params}
       };
 
       this.app.fetch(spec, function(err, result) {
@@ -21,13 +16,14 @@ define(function(require) {
     show: function(params, callback) {
 
       var spec = {
-        model: {model: 'users_bundle/user', params: params},
-        repos: {collection: 'users_bundle/repos', params: {user: params.login}}
+        model: {model: 'repos_bundle/repo', params: params, ensureKeys: ['language', 'watchers_count']},
+        build: {model: 'repos_bundle/build', params: params}
       };
 
       this.app.fetch(spec, function(err, result) {
         callback(err, result);
       });
+
     }
   };
 

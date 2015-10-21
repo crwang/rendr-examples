@@ -1,10 +1,8 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-  var BaseAppView = require('rendr/client/app_view');
-
+define([
+  'rendr/client/app_view'
+], function(BaseAppView)
+{
+  
   var $body = $('body');
 
   return BaseAppView.extend({

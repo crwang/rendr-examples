@@ -1,17 +1,14 @@
-if (typeof define !== 'function') {
-  var define = require('amdefine')(module);
-}
-
-define(function(require) {
-
-  var User = require('../../users_bundle/models/user'),
-    Base = require('../base');
+define([
+  'app/models/users_bundle/user',
+  'app/collections/base'
+], function(User, Base)
+{
 
   var exports = Base.extend({
     model: User,
     url: '/users'
   });
-  exports.id = 'Users';
+  exports.id = 'users_bundle/users';
 
   return exports;
 
