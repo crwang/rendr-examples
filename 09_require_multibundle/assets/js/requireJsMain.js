@@ -1,4 +1,3 @@
-
 require([
   'underscore',
   'handlebars',
@@ -6,8 +5,6 @@ require([
   'rendr-handlebars',
   'rendr/shared/modelUtils',
 ], function() {
-
-  console.log('hello in main12');
 
   /**
    * App dependencies needed on every page
@@ -26,16 +23,11 @@ require([
     _ = require('underscore'),
     bundles = {};
 
-  console.log('hello in require js main');
-  console.log(appNS.appData.requirejsBundles);
-
-  for (var key in appNS.appData.requirejsBundles) {
-    if (!appNS.appData.requirejsBundles.hasOwnProperty(key)) continue;
-
-    // TODO: Add prefix
-    bundles['/js/' + key] = appNS.appData.requirejsBundles[key];
-  }    
-  require.config({bundles: bundles});
+  // Add the require js bundle config here.
+  // In this example, this data is written into the app in index.js
+  if (appNS && appNS.appData) {
+    require.config({bundles: appNS.appData.requirejsBundles});
+  }
 
   _.each(appNS.bootstrappedData, function(data) {
     if (data.summary.collection) {

@@ -7,7 +7,8 @@ var express     = require('express'),
   compression   = require('compression'),
   serveStatic   = require('serve-static'),
   fs            = require('fs'),
-  requirejsBundleMapping = 'config/mapping.json';
+  _             = require('underscore'),
+  config        = require('config');
 
 /**
  * In this simple example, the DataAdapter config, which specifies host, port, etc. of the API
@@ -26,28 +27,58 @@ var dataAdapterConfig = {
   }
 };
 
-/**
+/** 
  * Initialize our Rendr server.
  */
 var server = rendr.createServer({
   dataAdapterConfig: dataAdapterConfig
 });
 
+console.log(config);
+// console.log(config.get('appData'));
+
 server.configure(function (expressApp) {
   expressApp.use(compression());
   expressApp.use(serveStatic(__dirname + '/public'));
   expressApp.use(bodyParser.json());
 
-  if (fs.existsSync(requirejsBundleMapping)) {
-    // Set the requireJs mapping if it's found
-    expressApp.use(function(req, res, next) {
+  expressApp.use(function(req, res, next) {
+    if (config && config.has('appData.static.js.mapping')) {
         var app = req.rendrApp;
-        var manifest = fs.readFileSync(requirejsBundleMapping);
-        var bundles = JSON.parse(manifest);
-        app.set('requirejsBundles', bundles);
-        next();
-    });
-  }
+        var requirejsBundles = {};
+
+        _.each(config.get('appData.static.js.mapping'), function(value, key) {
+          if (key !== 'common') {
+            /* Format the requireJsBundles to be in the format that requireJs likes:
+             * Eg, take the json generated from the multibundle-mapper and multibundle-requirejs:
+             * 
+             * ...
+             * "mapping": {
+             *     "user": "/js/user.fce3fb7ac7a6714acc1ad51a28945e4a",
+             *     ...
+             * },
+             * "bundles": {
+             *     "user": ["app/models/users_bundle/user", "app/collections/users_bundle/users", "app/views/users_bundle/user_repos_view", "app/views/users_bundle/users/index", "app/views/users_bundle/users/show", "app/controllers/users_bundle/users_controller", "public/js/app/templates/users_bundle/compiledTemplates"],
+             *     ...
+             * }
+             * ...
+             *
+             * and reformat it to 
+             * {
+             *     "/js/user.fce3fb7ac7a6714acc1ad51a28945e4a": ["app/models/users_bundle/user", "app/collections/users_bundle/users", "app/views/users_bundle/user_repos_view", "app/views/users_bundle/users/index", "app/views/users_bundle/users/show", "app/controllers/users_bundle/users_controller", "public/js/app/templates/users_bundle/compiledTemplates"],
+             *     ...
+             * }
+             */
+            requirejsBundles[value + '.js'] = config.get('appData.static.js.bundles').get(key);
+          } else {
+            // Add the common path to the app data so that it can be accessed in __layout.hbs
+            app.set('commonPath', value + '.js');
+          }
+        });
+        app.set('requirejsBundles', requirejsBundles);
+    }
+    next();
+  });
 });
 
 /**

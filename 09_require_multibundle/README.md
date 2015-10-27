@@ -1,3 +1,102 @@
+## Global Define
+
+This example uses the global-define NPM package to include/define dependencies: https://www.npmjs.com/package/global-define
+
+**TODO: Change this to use https://www.npmjs.com/package/rjs-commonjs to support a better development experience**
+
+## Bundling
+
+### Relative Paths and Views/Models/Collections
+
+To make bundling easier to specify with a glob syntax, it's best to have bundles separated by folders.
+
+Currently, the easiest way in Rendr to break up a multibundle RequireJS project is to adopt the following structure:
+
+```
+├─┬ app
+│ ├─┬ collections
+│ │ ├─┬ bundle1
+│ │ │ ├── collection_a
+│ │ │ └── collection_b
+│ │ └─┬ bundle2
+│ │   ├── collection_c
+│ │   └── collection_d
+│ ├── controllers
+│ │ ├─┬ bundle1
+│ │ │ ├── controller_a
+│ │ │ └── controller_b
+│ │ └─┬ bundle2
+│ │   ├── controller_c
+│ │   └── controller_d
+│ ├── lib
+│ ├─┬ models
+│ │ ├─┬ bundle1
+│ │ │ ├── model_a
+│ │ │ └── model_b
+│ │ └─┬ bundle2
+│ │   ├── model_c
+│ │   └── model_d
+│ ├─┬ templates
+│ │ ├─┬ bundle1
+│ │ │ ├── templates_a
+│ │ │ └── templates_b
+│ │ └─┬ bundle2
+│ │   ├── templates_c
+│ │   └── templates_d
+│ ├─┬ views
+│ │ ├─┬ bundle1
+│ │ │ ├── views_a
+│ │ │ └── views_b
+│ │ └─┬ bundle2
+│ │   ├── views_c
+│ │   └── views_d
+│ │
+
+```
+
+There are better structures (see https://github.com/rendrjs/rendr/issues/493), but they have yet to be incorporated into Rendr.
+
+One change for accessing models and collections with this approach is to specify the path to the model and collection. In a normal example, you might have: 
+
+```js
+      var spec = {
+        model: {model: 'User', params: params},
+        repos: {collection: 'Repos', params: {user: params.login}}
+      };
+```
+
+But with the extra path, it should specified snake-cased and relative:
+
+```js
+      var spec = {
+        model: {model: 'users_bundle/user', params: params},
+        repos: {collection: 'repos_bundle/repos', params: {user: params.login}}
+      };
+```
+
+
+### Templates
+
+Templates are compiled in this example through Handlebars and are included in the appropriate bundle.  This is specified in the Gruntfile.
+
+### Views/Models/Collections
+
+## Mapping the bundles
+
+## Including the correct one on the page
+
+__layout.hbs
+
+- Write the correct common bundle in through server-side Express
+
+
+Mapping file
+
+Config-based
+
+
+
+
 # Rendr App Template
 ## GitHub Browser
 

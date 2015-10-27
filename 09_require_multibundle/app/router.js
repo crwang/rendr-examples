@@ -23,6 +23,15 @@ define([
     }
   };
 
+  Router.prototype.navigate = function(path, options) {
+      // Trigger a navigating event
+      this.app.trigger('router:navigating', {
+          path: path,
+          options: options
+      });
+      BaseClientRouter.prototype.navigate.call(this, path, options);
+  };
+
   return Router;
 
 });

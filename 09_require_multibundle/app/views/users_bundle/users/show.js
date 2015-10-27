@@ -1,5 +1,5 @@
 define([
-  'app/views/base',
+  'app/views/base_page',
   'app/views/users_bundle/user_repos_view'
 ], function(BaseView)
 {

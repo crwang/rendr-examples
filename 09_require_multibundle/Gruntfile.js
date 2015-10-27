@@ -1,11 +1,16 @@
 var path = require('path'),
     async = require('async'),
-    stylesheetsDir = 'assets/stylesheets',
+    watchFilesLess = 'assets/style/**/*.less',
+    
+    Mapper = require('multibundle-mapper'),
     usersBundleTemplatePath = 'app/templates/users_bundle/**/*.hbs',
     reposBundleTemplatePath = 'app/templates/repos_bundle/**/*.hbs';
 
-// ,
-// requirejsBundleMapping = 'config/mapping.json';  
+// For this example, write to the local config.
+// For production, prefix should be configured by environment to build for CDNs, etc.
+var bundleMapper = Mapper.json('config/local.json', {
+    prefix: '/js'
+});
 
 module.exports = function(grunt) {
 
@@ -25,17 +30,11 @@ module.exports = function(grunt) {
                     hashFiles: true,
                     // will be called one extra time with no arguments after all the bundles processed
                     // also accepts writable streams in object mode, (e.g. `multibundle-requirejs-mapping-write`)
+                    // handleMapping: bundleMapper,
                     handleMapping: function(buildObject) {
-                        // it will be invoked for each bundle with respective buildObject
-                        if (buildObject) {
-                            // assert(buildObject.name in options['multibundle-requirejs'].options);
-                            // expectedBundles--;
-                        }
-                        // and without arguments after all bundles have been processed
-                        else {
-                            // assert.strictEqual(0, expectedBundles);
-                        }
+                        return bundleMapper;
                     },
+
                     // pass options to r.js
                     baseUrl: '.',
                     optimize: 'uglify',
@@ -50,18 +49,9 @@ module.exports = function(grunt) {
                     preserveLicenseComments: false
                 },
 
-                // // optional modules
-                // 'optional': [{
-                //         'omniture': 'assets/vendor/s_code.js'
-                //     },
-
-                //     'app/lib/tracking/pixel.js',
-                //     'app/lib/tracking/omniture.js'
-                // ],
-
                 // Creates `<destination>/common.<hash>.js` file that includes all the modules specified in the bundle,
                 // shared modules between all the pages.
-                'common': [
+                common: [
                     // node modules
                     {
                         'requirejs': 'node_modules/requirejs/require.js'
@@ -99,7 +89,6 @@ module.exports = function(grunt) {
                             exports: '_'
                         }
                     },
-
                     {
                         'rendr-handlebars': {
                             src: 'node_modules/rendr-handlebars/index.js',
@@ -126,25 +115,13 @@ module.exports = function(grunt) {
 
                     // base app files
                     'app/*.js',
-                    // 'public/js/app/templates/compiledTemplates.js',
                     'app/templates/*.js',
-                    // '!app/templates/compiledTemplates.js',
 
                     // lib
                     'app/lib/**/*.js',
 
                     'app/views/home/**/*.js',
                     'app/controllers/home_controller.js',
-
-                    // main script
-                    // {
-                    //     'main': 'assets/js/app.js'
-                    // },
-
-                    // app helper files
-                    // 'app/helper*.js',
-
-                    // lib
                 ],
                 // Creates separate bundle for user page components – `<destination>/user.<hash>.js`
                 user: [
@@ -166,18 +143,6 @@ module.exports = function(grunt) {
             }
         },
 
-        stylus: {
-            compile: {
-                options: {
-                    paths: [stylesheetsDir],
-                    'include css': true
-                },
-                files: {
-                    'public/styles.css': stylesheetsDir + '/index.styl'
-                }
-            }
-        },
-
         handlebars: {
             compile_server: {
                 options: {
@@ -191,12 +156,14 @@ module.exports = function(grunt) {
                 dest: "app/templates/compiledTemplates.js",
                 filter: function(filepath) {
                     var filename = path.basename(filepath);
-                    console.log('filename: ' + filename);
                     // Exclude files that begin with '__' from being sent to the client,
                     // i.e. __layout.hbs.
                     return filename.slice(0, 2) !== '__';
                 }
             },
+            /*
+             * Create separate compiled templates so that they can be bundled
+             */
             compile_client: {
                 options: {
                     amd: true,
@@ -205,14 +172,45 @@ module.exports = function(grunt) {
                     }
                 },
                 files: {
-                      // 'app/templates/compiledTemplatesClient.js': 
-                      'public/js/app/templates/compiledTemplates.js': 
-                        ['app/templates/**/*.hbs', 
-                            '!' + usersBundleTemplatePath,
-                            '!' + reposBundleTemplatePath,
-                            '!app/templates/__layout.hbs'],
-                      'public/js/app/templates/users_bundle/compiledTemplates.js': usersBundleTemplatePath,
-                      'public/js/app/templates/repos_bundle/compiledTemplates.js': reposBundleTemplatePath
+                    'public/js/app/templates/compiledTemplates.js': ['app/templates/**/*.hbs',
+                        '!' + usersBundleTemplatePath,
+                        '!' + reposBundleTemplatePath,
+                        '!app/templates/__layout.hbs'
+                    ],
+                    'public/js/app/templates/users_bundle/compiledTemplates.js': usersBundleTemplatePath,
+                    'public/js/app/templates/repos_bundle/compiledTemplates.js': reposBundleTemplatePath
+                }
+            }
+        },
+
+        less: { // Task
+            production: { // Target
+                options: {
+                    paths: [watchFilesLess], // Target options
+                    'include less': true,
+                    compress: true
+                },
+                files: {
+                    'public/site.css': 'assets/style/site.less'
+                }
+            },
+            staging: { // Target
+                options: {
+                    paths: [watchFilesLess], // Target options
+                    'include less': true,
+                    compress: true
+                },
+                files: {
+                    'public/site.css': 'assets/style/site.less'
+                }
+            },
+            development: { // Target
+                options: {
+                    paths: [watchFilesLess], // Target options
+                    'include less': true
+                },
+                files: {
+                    'public/site.css': 'assets/style/site.less'
                 }
             }
         },
@@ -220,7 +218,7 @@ module.exports = function(grunt) {
         watch: {
             scripts: {
                 files: 'app/**/*.js',
-                tasks: [/*'rendr_requirejs:build_app', */'handlebars:compile_client'],
+                tasks: [ /*'rendr_requirejs:build_app', */ 'handlebars:compile_client'],
                 options: {
                     interrupt: true
                 }
@@ -232,28 +230,23 @@ module.exports = function(grunt) {
                     interrupt: true
                 }
             },
-            stylesheets: {
-                files: [stylesheetsDir + '/**/*.styl', stylesheetsDir + '/**/*.css'],
-                tasks: ['stylus'],
+            filesLess: {
+                files: [watchFilesLess],
+                tasks: ['less'],
                 options: {
-                    interrupt: true
+                    spawn: true,
+                    interval: 5007
                 }
             }
         }
     });
-
 
     grunt.loadNpmTasks('grunt-contrib-stylus');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-handlebars');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-multibundle-requirejs');
-    // grunt.loadNpmTasks('grunt-rendr-requirejs');
-
-
-    // grunt.registerTask('build_world',
-    // [ 'multibundle_requirejs',
-    // ]);
+    grunt.loadNpmTasks('grunt-contrib-less');
 
     grunt.registerTask('runNode', function() {
         grunt.util.spawn({
@@ -269,7 +262,7 @@ module.exports = function(grunt) {
 
     // grunt.registerTask('build', ['multibundle_requirejs']);
 
-    grunt.registerTask('compile', ['handlebars', 'stylus']);
+    grunt.registerTask('compile', ['handlebars', 'less:development']);
 
     // Run the server and watch for file changes
     grunt.registerTask('server', [ /*'build_world', */ 'compile', 'runNode', 'watch']);

@@ -4,40 +4,36 @@
   <head>
     <meta charset='utf-8'/>
     <title>Rendr Example App</title>
-
-    <link href="/styles.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/site.css" media="screen" rel="stylesheet" type="text/css" />
   </head>
 
   <body class="">
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="brand" href="/">GitHub Browser</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li class="active"><a href="/">Home</a></li>
-              <li class="active"><a href="/repos">Repos</a></li>
-              <li class="active"><a href="/users">Users</a></li>
-            </ul>
-          </div>
-          <div class="loading-indicator">Loading&hellip;</div>
+    <div class="navbar navbar-inverse">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">GitHub Browser</a>
         </div>
+        <div class="nav-collapse collapse">
+          <ul class="nav">
+            <li class="active"><a href="/">Home</a></li>
+            <li class="active"><a href="/repos">Repos</a></li>
+            <li class="active"><a href="/users">Users</a></li>
+          </ul>
+        </div>
+        <div class="loading-indicator">Loading&hellip;</div>
       </div>
     </div>
 
-    <section id="content" class="container">
+    <main id="content" class="container">
       {{{body}}}
-    </section>
+    </main>
 
     <script>
     var appNS = {};
     appNS.appData = {{json appData}};
     appNS.bootstrappedData = {{json bootstrappedData}}
     </script>
-{{!--     
-    <script data-main="/js/requireJsMain" src="/js/common.793f508d8e9053b6c41775f6b9a7a9c8.js"></script>
- --}}
-    <script src="/js/common.1f285f6c936f1805a91a6e935e1fcf13.js"></script>
+    <script src="{{appData.commonPath}}"></script>
   </body>
-
 </html>
