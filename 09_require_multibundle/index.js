@@ -34,9 +34,6 @@ var server = rendr.createServer({
   dataAdapterConfig: dataAdapterConfig
 });
 
-console.log(config);
-// console.log(config.get('appData'));
-
 server.configure(function (expressApp) {
   expressApp.use(compression());
   expressApp.use(serveStatic(__dirname + '/public'));

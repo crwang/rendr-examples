@@ -2,7 +2,6 @@ require([
   'underscore',
   'handlebars',
   'app/routes',
-  // 'rendr-handlebars',
   'rendr/shared/modelUtils',
 ], function() {
 
@@ -21,9 +20,6 @@ require([
   var ModelUtils = require('rendr/shared/modelUtils'),
       modelUtils = new ModelUtils(''),
       _ = require('underscore');
-
-  console.log('hello in main app.js');
-  console.log(appNS.appData.requirejsBundles);
 
   _.each(appNS.bootstrappedData, function(data) {
     if (data.summary.collection) {

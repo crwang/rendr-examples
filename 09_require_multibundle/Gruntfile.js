@@ -218,7 +218,7 @@ module.exports = function(grunt) {
         watch: {
             scripts: {
                 files: 'app/**/*.js',
-                tasks: [ /*'rendr_requirejs:build_app', */ 'handlebars:compile_client'],
+                tasks: [ 'multibundle-requirejs'],
                 options: {
                     interrupt: true
                 }
@@ -260,12 +260,12 @@ module.exports = function(grunt) {
         });
     });
 
-    // grunt.registerTask('build', ['multibundle_requirejs']);
-
-    grunt.registerTask('compile', ['handlebars', 'less:development']);
+    grunt.registerTask('compile_js', ['handlebars', 'multibundle-requirejs']);
+    grunt.registerTask('compile', ['compile_js'/*, 'less:development'*/]);
 
     // Run the server and watch for file changes
-    grunt.registerTask('server', [ /*'build_world', */ 'compile', 'runNode', 'watch']);
+    // grunt.registerTask('server', ['compile', 'runNode', 'watch']);
+    grunt.registerTask('server', ['multibundle-requirejs','runNode' , 'watch' ]);
 
     // Default task(s).
     grunt.registerTask('default', ['compile']);

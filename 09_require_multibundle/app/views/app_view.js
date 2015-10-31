@@ -2,7 +2,7 @@ define([
   'rendr/client/app_view'
 ], function(BaseAppView)
 {
-  
+   
   var $body = $('body');
 
   return BaseAppView.extend({
